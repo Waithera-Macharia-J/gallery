@@ -42,8 +42,6 @@ pipeline {
         stage('Deploy to Render') {
             steps {
                 echo 'Deploying to Render...'
-                // This assumes you have connected Render CLI or just restart server
-                // If Render auto-deploys from GitHub, just pushing triggers deploy
                 sh 'echo "Deploy completed. Visit ${RENDER_URL}"'
             }
         }
