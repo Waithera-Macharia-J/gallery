@@ -1,31 +1,49 @@
 pipeline {
-    agent { docker { image 'node:18' } } // ensures Node 18 available
+    agent any
+
+    environment {
+        NODE_ENV = 'development'
+        PORT = '5000'
+    }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/Waithera-Macharia-J/gallery.git'
             }
         }
 
-        stage('Install') {
+        stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
         }
 
-        stage('Build') {
+        stage('Run Tests') {
             steps {
-                sh 'echo "Build complete (no tests yet)"'
+                sh 'npm test'
+            }
+            post {
+                failure {
+                    // Send email if tests fail
+                    mail to: 'your-email@example.com',
+                         subject: "Build Failed: Milestone 3",
+                         body: "Tests failed in Jenkins. Check the build logs for details."
+                }
             }
         }
 
         stage('Deploy to Render') {
             steps {
-                withCredentials([string(credentialsId: 'RENDER_HOOK', variable: 'HOOK')]) {
-                    sh 'curl -X POST "$HOOK"'
-                }
+                // Replace this with your Render deployment command if needed
+                sh 'node server.js &'
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Milestone 3 pipeline completed successfully!"
         }
     }
 }
