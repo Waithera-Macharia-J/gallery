@@ -2,14 +2,13 @@ pipeline {
     agent any
 
     environment {
-        NODE_ENV = 'development'
-        PORT = '5000'
+        RENDER_URL = "https://gallery-cera.onrender.com" // Render app URL
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/Waithera-Macharia-J/gallery.git'
+                checkout scm
             }
         }
 
@@ -19,31 +18,36 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Build & Test') {
             steps {
                 sh 'npm test'
             }
-            post {
-                failure {
-                    // Send email if tests fail
-                    mail to: 'your-email@example.com',
-                         subject: "Build Failed: Milestone 3",
-                         body: "Tests failed in Jenkins. Check the build logs for details."
-                }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'node server.js &'
             }
         }
 
-        stage('Deploy to Render') {
+        stage('Notify Slack') {
             steps {
-                // Replace this with your Render deployment command if needed
-                sh 'node server.js &'
+                slackSend(
+                    channel: '#waithera_ip1', // Slack channel
+                    color: 'good', 
+                    message: "🚀 Build #${env.BUILD_NUMBER} succeeded!\nRender URL: ${env.RENDER_URL}"
+                )
             }
         }
     }
 
     post {
-        success {
-            echo "Milestone 3 pipeline completed successfully!"
+        failure {
+            slackSend(
+                channel: '#waithera_ip1',
+                color: 'danger',
+                message: "❌ Build #${env.BUILD_NUMBER} failed. Check Jenkins for details: ${env.BUILD_URL}"
+            )
         }
     }
 }
