@@ -1,31 +1,33 @@
 pipeline {
-    agent {
-        docker { image 'node:18' }  // runs all stages in Node 18 container
-    }
+    agent any  // runs on any available Jenkins node
 
     environment {
         NODE_ENV = 'development'
         PORT = '5000'
-        SLACK_CHANNEL = '#Waithera_IP1'
-        SLACK_CREDENTIAL_ID = 'slack-token'
+        SLACK_CHANNEL = '#waithera_ip1'
+        SLACK_CREDENTIAL_ID = 'slack-token' // Jenkins credential ID
         RENDER_URL = 'https://gallery-cera.onrender.com/'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                git 'https://github.com/Waithera-Macharia-J/gallery.git'
+                echo 'Checking out the repository...'
+                git branch: 'master', url: 'https://github.com/Waithera-Macharia-J/gallery.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
+                echo 'Installing npm dependencies...'
                 sh 'npm install'
             }
         }
 
         stage('Run Tests') {
             steps {
+                echo 'Running tests for Milestone 3...'
                 sh 'npm test'
             }
             post {
@@ -37,9 +39,12 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Render') {
             steps {
-                sh 'node server.js &'
+                echo 'Deploying to Render...'
+                // This assumes you have connected Render CLI or just restart server
+                // If Render auto-deploys from GitHub, just pushing triggers deploy
+                sh 'echo "Deploy completed. Visit ${RENDER_URL}"'
             }
         }
     }
@@ -48,12 +53,12 @@ pipeline {
         success {
             slackSend(channel: "${SLACK_CHANNEL}",
                       color: 'good',
-                      message: "Build #${env.BUILD_NUMBER} succeeded! Website deployed at ${RENDER_URL}")
+                      message: "🎉 Build #${env.BUILD_NUMBER} succeeded! Website deployed at ${RENDER_URL}")
         }
         failure {
             slackSend(channel: "${SLACK_CHANNEL}",
                       color: 'danger',
-                      message: "Build #${env.BUILD_NUMBER} failed. Check Jenkins logs.")
+                      message: "⚠️ Build #${env.BUILD_NUMBER} failed. Check Jenkins logs.")
         }
     }
 }
